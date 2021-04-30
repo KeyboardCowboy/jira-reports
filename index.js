@@ -5,22 +5,16 @@
  * Runs a series of reports against the IBM Cloud Jira project.
  */
 
-// Instantiate global variables.
-// var jira = {};
-// let config = {};
-
 // Load dependencies.
 require('./src/utils');
 const program = require('commander');
 const jiraToolbox = require('./src/jira-tools');
-const logger = require('./src/logger');
 const config = require('./config.js') || {};
 
 // Parse arguments into program.
 program
   .option('-d, --days <integer>', 'The number of days of history to retrieve.  Defaults to 90.')
   .option('-a, --avg <integer>', 'Number of weeks to include in the rolling average.  Defaults to 4.')
-  .option('-g, --debug <bool>', 'Print full error messages. (Optional)')
   .parse(process.argv);
 
 // Create connection to Jira.
@@ -33,7 +27,7 @@ let connectToJira = new Promise((resolve, reject) =>  {
     reject(err);
   }
 }).catch(error => {
-  logger.error("Unable to connect to Jira at " + config.jiraApi, program, error);
+  console.error("Unable to connect to Jira at " + config.jiraApi);
 });
 
 // Process the weekly velocity.
