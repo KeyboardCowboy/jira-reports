@@ -10,13 +10,17 @@ module.exports = {
      * Connect to jiraApi
      */
     connect: function (config) {
-        return new JiraApi({
-            protocol: new URL(config.jiraApi).protocol || '',
-            host: new URL(config.jiraApi).hostname || '',
-            username: config.jiraUsername || '',
-            password: config.jiraToken || '',
-            apiVersion: '2',
-            strictSSL: true
+        return new Promise((resolve, reject) => {
+            let jira = new JiraApi({
+                protocol: new URL(config.jiraApi).protocol || '',
+                host: new URL(config.jiraApi).hostname || '',
+                username: config.jiraUsername || '',
+                password: config.jiraToken || '',
+                apiVersion: '2',
+                strictSSL: true
+            });
+
+            resolve(jira);
         });
     },
 
