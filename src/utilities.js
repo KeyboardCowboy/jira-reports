@@ -2,43 +2,41 @@
  * Collection of general utility methods.
  */
 require('./prototype');
-const inquirer = require('inquirer');
+const nodemailer = require('nodemailer');
+const fs = require('fs');
 
 module.exports = {
-    /**
-     * Get the  name of the report to run.  If not supplied, give users a choice.
-     *
-     * @param options
-     * @param reports
-     * @returns {Promise<unknown>}
-     */
-    getReport: (options, reports) => {
-        return new Promise((resolve, reject) => {
-            // Get a list of report names from the processor.
-            let reportNames = [];
-            for (let i in reports) {
-                reportNames.push({name: reports[i].label, value: i});
+    sendMail: (options) => {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: '',
+                pass: ''
             }
+        });
 
-            // If a report wasn't specified as an option, ask the user for it.
-            if (!options.report) {
-                const reportQuestion = {
-                    type: 'list',
-                    name: 'reportName',
-                    message: "What report would you like to run?",
-                    choices: reportNames
-                }
+        let mailOptions = {
+            from: '',
+            to: '',
+            subject: options.subject || '',
+            text: options.text || ''
+        };
 
-                inquirer.prompt([reportQuestion]).then(answer => {
-                    resolve(answer.reportName);
-                });
+        transporter.sendMail(mailOptions, function(error, info){
+            if (error) {
+                console.log(error);
             } else {
-                resolve(options.report);
+                console.log('Email sent: ' + info.response);
             }
         });
     },
 
-    getReports: () => {
-
+    logData: (data) => {
+        const logfile = '/Users/Chris/www/htdocs/lullabot/ibm-reporting/logs/wip.log';
+        fs.writeFile(logfile, data + "\n", { flag: 'a+' }, err => {
+            if (err) {
+                return console.error(err);
+            }
+        });
     }
 }
