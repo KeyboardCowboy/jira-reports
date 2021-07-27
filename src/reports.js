@@ -1,7 +1,7 @@
 /**
  * Contains the different reports that can be run.
  */
-
+require('./prototype');
 const prompt = require('prompt-sync')({sigint: true});
 const utilities = require('./utilities');
 const jiraToolbox = require('./jira-tools');
@@ -84,8 +84,18 @@ module.exports = {
                 // Collect the necessary params for this report.
                 const days = parseInt(prompt("Days of history [90]: ")) || 90;
 
+                // Build a collection object to aggregate data.
+                const bucket = {};
+                let date = new Date();
+                date.setDate(`-${days}`);
+                const firstWeek = date.getFullWeek();
+                bucket[firstWeek] = 0;
+                date = date.setDate(7);
+                const secondWeek = date.getFullWeek();
+                bucket[secondWeek] = 0;
+
                 // Get bug tickets.
-                let search_query = 'project = HC AND type = "Bug" and created >= "-' + days + 'd" AND status NOT IN ("Cancelled") order by resolved desc';
+                let search_query = 'project = HC AND type = "Bug" and created >= "-' + days + 'd" AND status NOT IN ("Cancelled") order by created desc';
                 let search_options = {
                     'maxResults': 5000,
                     'fields': ['created'],
@@ -98,7 +108,7 @@ module.exports = {
                         process.exit(1);
                     }
 
-                    // Group issues by week resolved.
+                    // Group issues by week created.
                     let issuesByWeek = jiraToolbox.groupByWeek(response.issues, 'created');
 
                     // Trim first and last weeks in case they have incomplete data.
@@ -130,8 +140,8 @@ module.exports = {
         process: (jiraApi, options) => {
             return new Promise((resolve, reject) => {
                 // Define JQL.
-                const wipQuery = 'project = HC AND statusCategory = "In Progress"';
-                const readyQuery = 'project = HC AND status = "Ready"';
+                const wipQuery = 'project = HC AND statusCategory = "In Progress" and type not in (Epic, Initiative, "Test Case") and status not in ("On Hold", Blocked, "Awaiting Feedback")';
+                const readyQuery = 'project = HC AND status = "Ready" and type not in (Epic, Initiative, "Test Case")';
                 const searchOptions = {
                     'maxResults': 5000,
                     'fields': [],

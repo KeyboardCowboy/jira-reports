@@ -38,6 +38,12 @@ Date.prototype.getWeek = function () {
     return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
 }
 
+Date.prototype.getFullWeek = function() {
+    const year = this.getFullYear();
+    const week = this.getWeek();
+    return year.toString() + week.toString().padStart(2, "0");
+}
+
 /**
  * Set the date to the previous weekday as specified.
  *

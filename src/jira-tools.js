@@ -5,7 +5,7 @@ const JiraApi = require('jira-client');
 /**
  * Tools for working with Jira issues.
  */
-module.exports = {
+JiraTools = {
     /**
      * Connect to jiraApi
      */
@@ -36,16 +36,31 @@ module.exports = {
     groupByWeek: function (issues, field) {
         let data = {};
 
+        // Ensure we have an entry for every week in the range so there are no gaps in weeks.
+        const firstWeek = JiraTools.getWeekString(issues[0].fields[field]);
+
         // Parse the data into an array with week numbers.
         issues.forEach(issue => {
             let date = new Date(issue.fields[field]);
-            let year = date.getFullYear();
-            let week = date.getWeek();
-            let key = year.toString() + week.toString().padStart(2, "0");
+            let key = JiraTools.getWeekString(date);
             data[key] = data[key] || 0;
             data[key]++;
         });
 
         return data;
+    },
+
+    /**
+     * Get a consistent week string including year.
+     *
+     * @param date
+     * @returns {string}
+     */
+    getWeekString: (date) => {
+        const year = date.getFullYear();
+        const week = date.getWeek();
+        return year.toString() + week.toString().padStart(2, "0");
     }
 };
+
+module.exports = JiraTools;
