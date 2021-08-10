@@ -6,6 +6,24 @@ const nodemailer = require('nodemailer');
 const fs = require('fs');
 
 module.exports = {
+    getDataBucket: (date, endDate) => {
+        const bucket = {};
+
+        // Default the end date to now.
+        endDate = endDate || new Date();
+
+        // Set the start date to the first day of the week that it occurs in.
+        date.setWeekStart();
+
+        while (date.getTime() <= endDate.getTime()) {
+            let week = date.getFullWeek();
+            bucket[week] = {weekStarts: date.toString(), count: 0};
+            date.setDate(date.getDate() + 7);
+        }
+
+        return bucket;
+    },
+
     sendMail: (options) => {
         const transporter = nodemailer.createTransport({
             service: 'gmail',

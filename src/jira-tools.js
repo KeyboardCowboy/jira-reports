@@ -30,36 +30,19 @@ JiraTools = {
      * @todo
      *   1. Verify that the field exists on the object.
      *   2. General error handling.
+     * @param {object} bucket
      * @param {array} issues
      * @param {string} field
      */
-    groupByWeek: function (issues, field) {
-        let data = {};
-
-        // Ensure we have an entry for every week in the range so there are no gaps in weeks.
-        const firstWeek = JiraTools.getWeekString(issues[0].fields[field]);
-
+    groupByWeek: function (bucket, issues, field) {
         // Parse the data into an array with week numbers.
         issues.forEach(issue => {
             let date = new Date(issue.fields[field]);
-            let key = JiraTools.getWeekString(date);
-            data[key] = data[key] || 0;
-            data[key]++;
+            let key = date.getFullWeek();
+            bucket[key].count++;
         });
 
-        return data;
-    },
-
-    /**
-     * Get a consistent week string including year.
-     *
-     * @param date
-     * @returns {string}
-     */
-    getWeekString: (date) => {
-        const year = date.getFullYear();
-        const week = date.getWeek();
-        return year.toString() + week.toString().padStart(2, "0");
+        return bucket;
     }
 };
 
