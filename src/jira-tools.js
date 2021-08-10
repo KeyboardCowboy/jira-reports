@@ -5,7 +5,7 @@ const JiraApi = require('jira-client');
 /**
  * Tools for working with Jira issues.
  */
-module.exports = {
+JiraTools = {
     /**
      * Connect to jiraApi
      */
@@ -30,22 +30,20 @@ module.exports = {
      * @todo
      *   1. Verify that the field exists on the object.
      *   2. General error handling.
+     * @param {object} bucket
      * @param {array} issues
      * @param {string} field
      */
-    groupByWeek: function (issues, field) {
-        let data = {};
-
+    groupByWeek: function (bucket, issues, field) {
         // Parse the data into an array with week numbers.
         issues.forEach(issue => {
             let date = new Date(issue.fields[field]);
-            let year = date.getFullYear();
-            let week = date.getWeek();
-            let key = year.toString() + week.toString().padStart(2, "0");
-            data[key] = data[key] || 0;
-            data[key]++;
+            let key = date.getFullWeek();
+            bucket[key].count++;
         });
 
-        return data;
+        return bucket;
     }
 };
+
+module.exports = JiraTools;

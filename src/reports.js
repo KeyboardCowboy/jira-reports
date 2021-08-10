@@ -1,7 +1,7 @@
 /**
  * Contains the different reports that can be run.
  */
-
+require('./prototype');
 const prompt = require('prompt-sync')({sigint: true});
 const utilities = require('./utilities');
 const jiraToolbox = require('./jira-tools');
@@ -18,6 +18,8 @@ module.exports = {
                 // Collect the necessary params for this report.
                 const days = prompt("Days of history [90]: ") || 90;
                 const ravg = parseInt(prompt("Weekly Rolling Average [0]: ")) || 0;
+                const startDate = new Date();
+                startDate.setDate(`-${days}`);
 
                 // Get resolved tickets.
                 let search_query = `project = HC AND resolutiondate >= "-${days}d" AND status NOT IN ("Cancelled") AND resolution NOT IN ("Cancelled") ORDER BY resolved desc`;
@@ -34,13 +36,12 @@ module.exports = {
                     }
 
                     // Group issues by week resolved.
-                    let issuesByWeek = jiraToolbox.groupByWeek(response.issues, 'resolutiondate');
+                    const bucket = utilities.getDataBucket(startDate);
+                    let issuesByWeek = jiraToolbox.groupByWeek(bucket, response.issues, 'resolutiondate');
 
                     // Trim first and last weeks in case they have incomplete data.
                     let weeks = Object.keys(issuesByWeek);
                     weeks.nsort();
-                    delete issuesByWeek[weeks.shift()];
-                    delete issuesByWeek[weeks.pop()];
 
                     // Calculate rolling averages.
                     let j = 0;
@@ -50,11 +51,11 @@ module.exports = {
                         let tot = 0;
                         for (let i = j; i < (interval + j); i++) {
                             if (options.format === "data-only") {
-                                console.log(`${weeks[i]},${issuesByWeek[weeks[i]]}`);
+                                console.log(`${weeks[i]},${issuesByWeek[weeks[i]].count}`);
                             } else {
-                                console.log("Week " + weeks[i] + " velocity: " + issuesByWeek[weeks[i]]);
+                                console.log("Week " + weeks[i] + " velocity: " + issuesByWeek[weeks[i]].count);
                             }
-                            tot = tot + parseInt(issuesByWeek[weeks[i]]);
+                            tot = tot + parseInt(issuesByWeek[weeks[i]].count);
                         }
 
                         let avg = Math.round(tot / interval);
@@ -81,11 +82,13 @@ module.exports = {
         chain: true,
         process: (jiraApi, options) => {
             return new Promise((resolve, reject) => {
-                // Collect the necessary params for this report.
+                // How many days of history do we want to collect?
                 const days = parseInt(prompt("Days of history [90]: ")) || 90;
+                let startDate = new Date();
+                startDate.setDate(`-${days}`);
 
                 // Get bug tickets.
-                let search_query = 'project = HC AND type = "Bug" and created >= "-' + days + 'd" AND status NOT IN ("Cancelled") order by resolved desc';
+                let search_query = 'project = HC AND type = "Bug" and created >= "-' + days + 'd" AND status NOT IN ("Cancelled") order by created desc';
                 let search_options = {
                     'maxResults': 5000,
                     'fields': ['created'],
@@ -98,21 +101,21 @@ module.exports = {
                         process.exit(1);
                     }
 
-                    // Group issues by week resolved.
-                    let issuesByWeek = jiraToolbox.groupByWeek(response.issues, 'created');
+                    // Group issues by week created.
+                    const bucket = utilities.getDataBucket(startDate);
+                    const issuesByWeek = jiraToolbox.groupByWeek(bucket, response.issues, 'created');
 
-                    // Trim first and last weeks in case they have incomplete data.
+                    // Trim last week since it will not have complete data.
                     let weeks = Object.keys(issuesByWeek);
                     weeks.nsort();
-                    delete issuesByWeek[weeks.shift()];
                     delete issuesByWeek[weeks.pop()];
 
                     // Print the report.
                     for (let i in issuesByWeek) {
                         if (options.format === "data-only") {
-                            console.log(`${i}, ${issuesByWeek[i]}`);
+                            console.log(`${i}, ${issuesByWeek[i].count}`);
                         } else {
-                            console.log(`Week ${i} bugs reported: ${issuesByWeek[i]}`);
+                            console.log(`Week ${i} bugs reported: ${issuesByWeek[i].count}`);
                         }
                     }
 
@@ -130,8 +133,8 @@ module.exports = {
         process: (jiraApi, options) => {
             return new Promise((resolve, reject) => {
                 // Define JQL.
-                const wipQuery = 'project = HC AND statusCategory = "In Progress"';
-                const readyQuery = 'project = HC AND status = "Ready"';
+                const wipQuery = 'project = HC AND statusCategory = "In Progress" and type not in (Epic, Initiative, "Test Case") and status not in ("On Hold", Blocked, "Awaiting Feedback")';
+                const readyQuery = 'project = HC AND status = "Ready" and type not in (Epic, Initiative, "Test Case")';
                 const searchOptions = {
                     'maxResults': 5000,
                     'fields': [],

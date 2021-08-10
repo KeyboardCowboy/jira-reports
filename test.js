@@ -2,19 +2,21 @@
 
 require('./src/prototype');
 
-// A simple promise that resolves after {ts}ms
-const getWord = () => {
-    return new Promise((resolve, reject) => {
-        let words = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel'];
-        const ri = Math.floor(Math.random() * words.length);
-        resolve(words[ri]);
-    });
-};
+const daysAgo = 90;
+const bucket = {};
 
-let promises = [];
-for (let i = 0; i < 10; i++) {
-    promises.push(getWord());
+// Build a collection object to aggregate data.
+let date = new Date();
+date.setDate(`-${daysAgo}`);
+date.setWeekStart();
+
+let endDate = new Date();
+
+while (date.getTime() < endDate.getTime()) {
+    let week = date.getFullWeek();
+    console.log(week);
+    bucket[week] = {weekStarts: date.toString()};
+    date.setDate(date.getDate() + 7);
 }
 
-// Promise.all
-Promise.all(promises).then(results => console.log(results));
+let x=0;
